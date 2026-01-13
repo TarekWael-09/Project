@@ -1,45 +1,53 @@
-# app_single_image.py
 import streamlit as st
 from PIL import Image
-import random
+import numpy as np
+import tensorflow as tf
 
 st.set_page_config(layout="centered")
-st.title("🚨 Accident Probability & Navigation Advisor")
+st.title("Accident Risk and Navigation Advisor")
 
-# Upload a single image
+# load trained model
+model = tf.keras.models.load_model("accident_model.h5")
+
+# image uploader
 uploaded_file = st.file_uploader(
-    "Upload a road/vehicle image",
-    type=["jpg","jpeg","png"]
+    "Upload a road or vehicle image",
+    type=["jpg", "jpeg", "png"]
 )
 
-# Dummy accident score generator
-def get_dummy_score():
-    return random.uniform(0, 1)
+# preprocess image
+def preprocess_image(img):
+    img = img.resize((224, 224))
+    img = np.array(img) / 255.0
+    img = np.expand_dims(img, axis=0)
+    return img
 
-# Determine decision and navigation
-def get_decision_and_navigation(score):
-    score_pct = score*100
-    if score_pct < 30:
-        return ("Low risk – normal driving", "Keep driving normally")
-    elif score_pct < 70:
-        return ("Moderate risk – drive carefully", "Drive carefully, avoid overtaking")
+# decision logic
+def get_decision(predicted_class):
+    if predicted_class == 0:
+        return "Low risk normal driving", "Keep driving normally"
+    elif predicted_class == 1:
+        return "Moderate risk drive carefully", "Reduce speed and avoid overtaking"
     else:
-        return ("High risk – take emergency action", "Take an alternative route or stop and wait for help")
+        return "High risk emergency action", "Stop or take an alternative route"
 
-# Display the image with info below
 if uploaded_file is not None:
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image", use_column_width=True)
-    
-    # Dummy prediction
-    score = get_dummy_score()
-    decision, navigation = get_decision_and_navigation(score)
-    score_pct = score*100
-    
-    # Display info below the image
-    st.markdown("---")  # separator
+
+    processed_img = preprocess_image(img)
+    prediction = model.predict(processed_img)
+    predicted_class = np.argmax(prediction)
+
+    decision, navigation = get_decision(predicted_class)
+
+    st.markdown("---")
     st.markdown(
-        f"**Accident Probability:** {score_pct:.2f}%  \n"
-        f"**Decision:** {decision}  \n"
-        f"**Navigation Advice:** {navigation}"
+        f"""
+        **Decision**  
+        {decision}
+
+        **Navigation Advice**  
+        {navigation}
+        """
     )
