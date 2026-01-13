@@ -3,40 +3,59 @@ from PIL import Image
 import random
 
 st.set_page_config(layout="centered")
-st.title("Accident Risk and Navigation Advisor")
+st.title("Accident Probability and Navigation Advisor")
 
 uploaded_file = st.file_uploader(
     "Upload a road or vehicle image",
     type=["jpg", "jpeg", "png"]
 )
 
-# hidden accident probability
-def get_accident_probability():
+def get_hidden_probability():
     return random.uniform(0, 1)
 
-# decision based on probability
-def get_decision_and_navigation(prob):
+def map_probability_to_label(prob):
     if prob < 0.3:
-        return "Low risk normal driving", "Keep driving normally"
+        return "Very low likelihood"
     elif prob < 0.7:
-        return "Moderate risk drive carefully", "Reduce speed and avoid overtaking"
+        return "Possible accident risk"
     else:
-        return "High risk emergency action", "Stop or take an alternative route"
+        return "High accident likelihood"
+
+def get_decision_and_navigation(label):
+    if label == "Very low likelihood":
+        return (
+            "Low risk normal driving",
+            "Keep driving normally"
+        )
+    elif label == "Possible accident risk":
+        return (
+            "Moderate risk drive carefully",
+            "Reduce speed and stay alert"
+        )
+    else:
+        return (
+            "High risk take emergency action",
+            "Stop or take an alternative route and request help"
+        )
 
 if uploaded_file is not None:
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    accident_probability = get_accident_probability()
-    decision, navigation = get_decision_and_navigation(accident_probability)
+    hidden_prob = get_hidden_probability()
+    probability_label = map_probability_to_label(hidden_prob)
+    decision, navigation = get_decision_and_navigation(probability_label)
 
     st.markdown("---")
     st.markdown(
         f"""
-        **Decision**  
+        Accident Probability  
+        {probability_label}
+
+        Decision  
         {decision}
 
-        **Navigation Advice**  
+        Navigation Advice  
         {navigation}
         """
     )
