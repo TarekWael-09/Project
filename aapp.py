@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image
-import random
+import hashlib
 
 st.set_page_config(layout="centered")
 st.title("Accident Probability and Navigation Advisor")
@@ -10,8 +10,12 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
-def get_hidden_probability():
-    return random.uniform(0, 1)
+def image_to_probability(image):
+    img_bytes = image.tobytes()
+    hash_value = hashlib.sha256(img_bytes).hexdigest()
+    numeric_value = int(hash_value[:8], 16)
+    probability = numeric_value / 0xFFFFFFFF
+    return probability
 
 def map_probability_to_label(prob):
     if prob < 0.3:
@@ -35,15 +39,15 @@ def get_decision_and_navigation(label):
     else:
         return (
             "High risk take emergency action",
-            "Stop or take an alternative route and request help"
+            "Stop or take an alternative route or wait for help"
         )
 
 if uploaded_file is not None:
-    img = Image.open(uploaded_file)
+    img = Image.open(uploaded_file).convert("RGB")
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    hidden_prob = get_hidden_probability()
-    probability_label = map_probability_to_label(hidden_prob)
+    hidden_probability = image_to_probability(img)
+    probability_label = map_probability_to_label(hidden_probability)
     decision, navigation = get_decision_and_navigation(probability_label)
 
     st.markdown("---")
